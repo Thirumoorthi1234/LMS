@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/Thiru/OneDrive/Desktop/LMS/server/routes/*.js)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh auth:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}
