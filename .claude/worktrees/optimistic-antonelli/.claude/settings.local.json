@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/Thiru/OneDrive/Desktop/LMS/server/routes/*.js)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh auth:*)",
+      "Bash(git config:*)",
+      "Bash(ls \"C:/Users/Thiru/OneDrive/Desktop/LMS/.git/worktrees/optimistic-antonelli/\"*.lock)",
+      "Bash(ls \"C:/Users/Thiru/OneDrive/Desktop/LMS/.git/\"*.lock)",
+      "Bash(powershell -Command 'Get-Process | Where-Object { $_.ProcessName -match '\\\\''git'\\\\'' } | Select-Object Id, ProcessName')",
+      "Bash(GIT_DIR=\"C:/Users/Thiru/OneDrive/Desktop/LMS/.git/worktrees/optimistic-antonelli\" GIT_WORK_TREE=\"C:/Users/Thiru/OneDrive/Desktop/LMS/.claude/worktrees/optimistic-antonelli\" git add client/src/pages/employee/Attendance.jsx server/models/Attendance.js server/routes/attendance.js)",
+      "Bash(git commit -m ':*)"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import { MapPin, LogIn, LogOut, AlertCircle } from 'lucide-react';
@@ -42,16 +42,17 @@ const Attendance = () => {
 
         let bestPos = null;
         let watchId = null;
-        const TARGET_ACCURACY = 80; // Aim for 80 meters or better
-        const MAX_WAIT_TIME = 30000; // Allow 30 seconds for GPS sensors to "warm up" and settle
+        const TARGET_ACCURACY = 150; // Required 150 meters or better
+        const MAX_WAIT_TIME = 20000; // Allow 20 seconds for GPS sensors to "warm up"
 
         const clearWatch = () => { if (watchId !== null) navigator.geolocation.clearWatch(watchId); };
 
-        // Fail-safe timeout: return best position found so far or error
+        // Fail-safe timeout: return best position found or throw specific error
         const timer = setTimeout(() => {
             clearWatch();
-            if (bestPos) resolve(bestPos);
-            else reject(new Error('Location request timed out. Please ensure GPS is enabled and you have a clear view of the sky.'));
+            if (bestPos && bestPos.accuracy <= TARGET_ACCURACY) resolve(bestPos);
+            else if (bestPos) reject(new Error(`Low accuracy: ±${Math.round(bestPos.accuracy)}m. Target is ±150m. Try going outside.`));
+            else reject(new Error('Location request timed out. Please ensure GPS is enabled.'));
         }, MAX_WAIT_TIME);
 
         watchId = navigator.geolocation.watchPosition(
@@ -75,29 +76,34 @@ const Attendance = () => {
                 }
             },
             err => {
-                // Only reject immediately on permission denial
                 if (err.code === err.PERMISSION_DENIED) {
                     clearTimeout(timer);
                     clearWatch();
-                    reject(new Error('Location access denied. Please allow location in your browser settings.'));
+                    reject(new Error('Location permission denied. Please allow location access in your browser settings.'));
+                } else if (err.code === err.POSITION_UNAVAILABLE) {
+                    console.warn('Geolocation unavailable, GPS might be off:', err.message);
                 }
-                // For other errors (position unavailable, timeout), we wait for the fallback timer
-                console.warn('Geolocation update error:', err.message);
             },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
         );
     });
 
-    // Reverse Geocode
+    // Reverse Geocode — called directly from the browser (OSM supports CORS)
     const getAddress = async (lat, lng) => {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`;
+            const res = await fetch(url, {
                 headers: { 'Accept-Language': 'en' }
             });
+            if (!res.ok) throw new Error('OSM error');
             const data = await res.json();
-            return data.display_name || 'Address not found';
+            if (data?.display_name) return data.display_name;
+            // Build a short readable address from components
+            const a = data?.address || {};
+            const parts = [a.road, a.suburb, a.city || a.town || a.village, a.state, a.country].filter(Boolean);
+            return parts.length > 0 ? parts.join(', ') : `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
         } catch {
-            return 'Address lookup failed';
+            return `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`;
         }
     };
 
